@@ -1,0 +1,566 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>ClipBrief — Turn Long Videos Into Viral Shorts</title>
+<meta name="description" content="AI-powered clip recommendations from any YouTube or Twitch VOD. Get timestamps, hooks, captions and viral scores instantly." />
+
+<!-- SEO -->
+<link rel="canonical" href="https://YOUR_USERNAME.github.io/clipbrief/" />
+
+<!-- Open Graph / Facebook -->
+<meta property="og:type" content="website" />
+<meta property="og:url" content="https://YOUR_USERNAME.github.io/clipbrief/" />
+<meta property="og:title" content="ClipBrief — Turn Long Videos Into Viral Shorts" />
+<meta property="og:description" content="AI-powered clip recommendations from any YouTube or Twitch VOD. Get timestamps, hooks, captions and viral scores instantly." />
+<meta property="og:image" content="/og-image.png" />
+
+<!-- Twitter -->
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:url" content="https://YOUR_USERNAME.github.io/clipbrief/" />
+<meta name="twitter:title" content="ClipBrief — Turn Long Videos Into Viral Shorts" />
+<meta name="twitter:description" content="AI-powered clip recommendations from any YouTube or Twitch VOD. Get timestamps, hooks, captions and viral scores instantly." />
+<meta name="twitter:image" content="/og-image.png" />
+
+<!-- Favicon -->
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>%E2%9C%A2%EF%B8%8F</text></svg>" />
+
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --black: #0a0a0a;
+    --white: #f5f2ed;
+    --green: #1D9E75;
+    --green-dim: #0f6e56;
+    --yellow: #EF9F27;
+    --gray: #888780;
+    --gray-light: #2a2a28;
+    --border: rgba(245,242,237,0.08);
+  }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--black);
+    color: var(--white);
+    font-family: 'Syne', sans-serif;
+    overflow-x: hidden;
+    cursor: none;
+  }
+
+  /* custom cursor */
+  .cursor {
+    width: 10px; height: 10px;
+    border-radius: 50%;
+    background: var(--green);
+    position: fixed; top: 0; left: 0;
+    pointer-events: none;
+    z-index: 9999;
+    transform: translate(-50%, -50%);
+    transition: transform 0.1s, width 0.2s, height 0.2s;
+    mix-blend-mode: screen;
+  }
+  .cursor.big { width: 40px; height: 40px; }
+
+  /* noise overlay */
+  body::before {
+    content: '';
+    position: fixed; inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.035'/%3E%3C/svg%3E");
+    pointer-events: none; z-index: 0; opacity: 0.6;
+  }
+
+  nav {
+    position: fixed; top: 0; left: 0; right: 0;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 1.25rem 2.5rem;
+    border-bottom: 0.5px solid var(--border);
+    backdrop-filter: blur(12px);
+    background: rgba(10,10,10,0.7);
+    z-index: 100;
+  }
+
+  .nav-logo {
+    font-family: 'DM Mono', monospace;
+    font-size: 15px; font-weight: 500;
+    color: var(--white);
+    text-decoration: none;
+    letter-spacing: -0.02em;
+  }
+  .nav-logo span { color: var(--green); }
+
+  .nav-links { display: flex; align-items: center; gap: 2rem; }
+  .nav-links a {
+    font-size: 13px; color: var(--gray);
+    text-decoration: none; transition: color 0.2s;
+  }
+  .nav-links a:hover { color: var(--white); }
+
+  .nav-cta {
+    background: var(--white) !important;
+    color: var(--black) !important;
+    padding: 8px 18px !important;
+    border-radius: 99px !important;
+    font-weight: 700 !important;
+    font-size: 13px !important;
+  }
+
+  /* hero */
+  .hero {
+    min-height: 100vh;
+    display: flex; flex-direction: column;
+    justify-content: center; align-items: flex-start;
+    padding: 8rem 2.5rem 4rem;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .hero-bg-text {
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: clamp(120px, 20vw, 240px);
+    font-weight: 800;
+    color: rgba(245,242,237,0.02);
+    white-space: nowrap;
+    pointer-events: none;
+    letter-spacing: -0.05em;
+    user-select: none;
+  }
+
+  .hero-eyebrow {
+    display: flex; align-items: center; gap: 8px;
+    font-family: 'DM Mono', monospace;
+    font-size: 11px; letter-spacing: 0.1em;
+    color: var(--green);
+    text-transform: uppercase;
+    margin-bottom: 1.5rem;
+    opacity: 0; animation: fadeUp 0.6s 0.1s forwards;
+  }
+  .hero-eyebrow::before {
+    content: ''; width: 24px; height: 1px; background: var(--green);
+  }
+
+  h1.hero-title {
+    font-size: clamp(44px, 8vw, 96px);
+    font-weight: 800;
+    line-height: 0.95;
+    letter-spacing: -0.04em;
+    max-width: 900px;
+    margin-bottom: 1.5rem;
+    opacity: 0; animation: fadeUp 0.7s 0.2s forwards;
+  }
+
+  h1.hero-title .accent { color: var(--green); }
+  h1.hero-title .accent-y { color: var(--yellow); }
+
+  .hero-sub {
+    font-size: 17px; line-height: 1.6;
+    color: var(--gray);
+    max-width: 480px;
+    margin-bottom: 2.5rem;
+    opacity: 0; animation: fadeUp 0.7s 0.3s forwards;
+  }
+
+  .hero-actions {
+    display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;
+    opacity: 0; animation: fadeUp 0.7s 0.4s forwards;
+  }
+
+  .btn-primary {
+    background: var(--green);
+    color: var(--black);
+    font-family: 'Syne', sans-serif;
+    font-size: 15px; font-weight: 700;
+    padding: 14px 28px;
+    border-radius: 99px;
+    border: none; cursor: pointer;
+    text-decoration: none;
+    display: inline-flex; align-items: center; gap: 8px;
+    transition: transform 0.15s, background 0.2s;
+  }
+  .btn-primary:hover { background: #22b885; transform: translateY(-1px); }
+
+  .btn-ghost {
+    background: transparent;
+    color: var(--white);
+    font-family: 'Syne', sans-serif;
+    font-size: 14px;
+    padding: 14px 24px;
+    border-radius: 99px;
+    border: 0.5px solid var(--border);
+    cursor: pointer;
+    text-decoration: none;
+    transition: border-color 0.2s;
+  }
+  .btn-ghost:hover { border-color: rgba(245,242,237,0.25); }
+
+  .hero-stats {
+    display: flex; gap: 2.5rem; margin-top: 4rem;
+    opacity: 0; animation: fadeUp 0.7s 0.5s forwards;
+  }
+  .stat-item { display: flex; flex-direction: column; gap: 2px; }
+  .stat-num { font-size: 28px; font-weight: 800; letter-spacing: -0.03em; }
+  .stat-label { font-family: 'DM Mono', monospace; font-size: 11px; color: var(--gray); letter-spacing: 0.06em; }
+
+  /* how it works */
+  section { padding: 6rem 2.5rem; position: relative; }
+
+  .section-tag {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px; letter-spacing: 0.1em;
+    color: var(--gray); text-transform: uppercase;
+    margin-bottom: 1rem;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .section-tag::before { content: ''; width: 16px; height: 1px; background: var(--gray); }
+
+  h2.section-title {
+    font-size: clamp(32px, 5vw, 58px);
+    font-weight: 800; letter-spacing: -0.04em;
+    line-height: 1; margin-bottom: 1rem;
+  }
+
+  .section-sub { font-size: 16px; color: var(--gray); max-width: 460px; line-height: 1.6; margin-bottom: 4rem; }
+
+  /* steps */
+  .steps { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1px; background: var(--border); border: 0.5px solid var(--border); border-radius: 16px; overflow: hidden; }
+
+  .step {
+    background: var(--black);
+    padding: 2rem;
+    transition: background 0.2s;
+  }
+  .step:hover { background: var(--gray-light); }
+
+  .step-num {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px; color: var(--green);
+    margin-bottom: 1rem; letter-spacing: 0.1em;
+  }
+  .step-icon { font-size: 28px; margin-bottom: 1rem; }
+  .step h3 { font-size: 18px; font-weight: 700; margin-bottom: 0.5rem; }
+  .step p { font-size: 13px; color: var(--gray); line-height: 1.6; }
+
+  /* demo card */
+  .demo-section { background: var(--gray-light); border-radius: 24px; padding: 3rem; }
+  .demo-card {
+    background: var(--black);
+    border: 0.5px solid var(--border);
+    border-radius: 16px;
+    overflow: hidden;
+  }
+  .demo-bar {
+    display: flex; align-items: center; gap: 6px;
+    padding: 0.75rem 1rem;
+    border-bottom: 0.5px solid var(--border);
+    background: rgba(245,242,237,0.03);
+  }
+  .demo-dot { width: 8px; height: 8px; border-radius: 50%; }
+  .demo-dot.r { background: #ff5f57; }
+  .demo-dot.y { background: #febc2e; }
+  .demo-dot.g { background: #28c840; }
+
+  .demo-clips { padding: 1.25rem; display: flex; flex-direction: column; gap: 0.75rem; }
+  .demo-clip {
+    border: 0.5px solid var(--border);
+    border-radius: 12px; overflow: hidden;
+  }
+  .demo-clip-top {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0.6rem 1rem;
+    background: rgba(245,242,237,0.03);
+    border-bottom: 0.5px solid var(--border);
+  }
+  .demo-clip-num { font-family: 'DM Mono', monospace; font-size: 10px; color: var(--gray); }
+  .ts-pill {
+    font-family: 'DM Mono', monospace; font-size: 11px;
+    background: rgba(29,158,117,0.15); color: var(--green);
+    padding: 2px 8px; border-radius: 99px;
+  }
+  .score-pill {
+    font-family: 'DM Mono', monospace; font-size: 11px;
+    background: rgba(239,159,39,0.15); color: var(--yellow);
+    padding: 2px 8px; border-radius: 99px;
+  }
+  .demo-clip-body { padding: 0.75rem 1rem; }
+  .demo-hook { font-size: 14px; font-weight: 700; margin-bottom: 0.4rem; }
+  .demo-caption { font-size: 12px; color: var(--gray); line-height: 1.5; }
+
+  /* pricing */
+  .pricing-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1rem; max-width: 680px; }
+
+  .pricing-card {
+    background: var(--gray-light);
+    border: 0.5px solid var(--border);
+    border-radius: 16px;
+    padding: 2rem;
+    position: relative;
+    transition: border-color 0.2s;
+  }
+  .pricing-card.featured {
+    border-color: var(--green);
+    background: rgba(29,158,117,0.06);
+  }
+  .pricing-badge {
+    position: absolute; top: -10px; left: 1.5rem;
+    background: var(--green); color: var(--black);
+    font-family: 'DM Mono', monospace;
+    font-size: 10px; font-weight: 500; letter-spacing: 0.08em;
+    padding: 3px 10px; border-radius: 99px;
+  }
+
+  .plan-name { font-family: 'DM Mono', monospace; font-size: 12px; color: var(--gray); letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 0.75rem; }
+  .plan-price { font-size: 42px; font-weight: 800; letter-spacing: -0.04em; margin-bottom: 0.25rem; }
+  .plan-price span { font-size: 16px; color: var(--gray); font-weight: 400; }
+  .plan-desc { font-size: 13px; color: var(--gray); margin-bottom: 1.5rem; line-height: 1.5; }
+
+  .plan-features { list-style: none; display: flex; flex-direction: column; gap: 0.6rem; margin-bottom: 1.75rem; }
+  .plan-features li { font-size: 13px; display: flex; align-items: center; gap: 8px; }
+  .plan-features li::before { content: ''; width: 14px; height: 14px; border-radius: 50%; background: rgba(29,158,117,0.2); flex-shrink: 0; display: flex; align-items: center; justify-content: center; }
+  .plan-features li.yes::before { background: var(--green); }
+
+  .btn-plan {
+    display: block; width: 100%; text-align: center;
+    font-family: 'Syne', sans-serif; font-size: 14px; font-weight: 700;
+    padding: 12px; border-radius: 99px; border: none; cursor: pointer;
+    text-decoration: none; transition: opacity 0.15s, transform 0.1s;
+  }
+  .btn-plan:hover { opacity: 0.85; transform: translateY(-1px); }
+  .btn-plan.outline { background: transparent; border: 0.5px solid var(--border); color: var(--white); }
+  .btn-plan.solid { background: var(--green); color: var(--black); }
+
+  /* faq */
+  .faq-list { max-width: 640px; display: flex; flex-direction: column; gap: 0; }
+  .faq-item { border-bottom: 0.5px solid var(--border); }
+  .faq-q {
+    width: 100%; background: none; border: none; color: var(--white);
+    font-family: 'Syne', sans-serif; font-size: 15px; font-weight: 500;
+    text-align: left; padding: 1.25rem 0;
+    display: flex; justify-content: space-between; align-items: center;
+    cursor: pointer; gap: 1rem;
+  }
+  .faq-arrow { color: var(--gray); font-size: 18px; transition: transform 0.2s; flex-shrink: 0; }
+  .faq-item.open .faq-arrow { transform: rotate(45deg); }
+  .faq-a { font-size: 14px; color: var(--gray); line-height: 1.7; padding-bottom: 1.25rem; display: none; }
+  .faq-item.open .faq-a { display: block; }
+
+  /* footer */
+  footer {
+    border-top: 0.5px solid var(--border);
+    padding: 2rem 2.5rem;
+    display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem;
+  }
+  .footer-logo { font-family: 'DM Mono', monospace; font-size: 13px; }
+  .footer-logo span { color: var(--green); }
+  footer p { font-size: 12px; color: var(--gray); }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  @media (max-width: 600px) {
+    nav { padding: 1rem 1.25rem; }
+    .nav-links { display: none; }
+    .hero { padding: 7rem 1.25rem 3rem; }
+    section { padding: 4rem 1.25rem; }
+    .hero-stats { gap: 1.5rem; }
+    footer { padding: 1.5rem 1.25rem; }
+  }
+</style>
+</head>
+<body>
+
+<div class="cursor" id="cursor"></div>
+
+<nav>
+  <a class="nav-logo" href="#"><span>Clip</span>Brief</a>
+  <div class="nav-links">
+    <a href="#how">How it works</a>
+    <a href="#pricing">Pricing</a>
+    <a href="#faq">FAQ</a>
+    <a href="app.html" class="nav-cta">Try Free</a>
+  </div>
+</nav>
+
+<section class="hero">
+  <div class="hero-bg-text">CLIP</div>
+  <div class="hero-eyebrow">AI-Powered Clipping</div>
+  <h1 class="hero-title">
+    Your long videos.<br>
+    <span class="accent">Viral</span> short clips.<br>
+    <span class="accent-y">Zero</span> guesswork.
+  </h1>
+  <p class="hero-sub">Paste any YouTube or Twitch VOD link and get AI-generated clip recommendations with timestamps, hooks, viral scores, and ready-to-post captions.</p>
+  <div class="hero-actions">
+    <a href="app.html" class="btn-primary">Try it free &rarr;</a>
+    <a href="#how" class="btn-ghost">See how it works</a>
+  </div>
+  <div class="hero-stats">
+    <div class="stat-item">
+      <span class="stat-num">5/day</span>
+      <span class="stat-label">free generations</span>
+    </div>
+    <div class="stat-item">
+      <span class="stat-num">10x</span>
+      <span class="stat-label">more clips per VOD</span>
+    </div>
+    <div class="stat-item">
+      <span class="stat-num">∞</span>
+      <span class="stat-label">videos per month</span>
+    </div>
+  </div>
+</section>
+
+<section id="how">
+  <div class="section-tag">How it works</div>
+  <h2 class="section-title">3 steps.<br>Done.</h2>
+  <p class="section-sub">No complicated setup. No software to install. Just paste, generate, and clip.</p>
+  <div class="steps">
+    <div class="step">
+      <div class="step-num">01 &mdash; PASTE</div>
+      <div class="step-icon">&#128279;</div>
+      <h3>Drop your link</h3>
+      <p>Paste any YouTube video or Twitch VOD URL. Any length, any niche.</p>
+    </div>
+    <div class="step">
+      <div class="step-num">02 &mdash; GENERATE</div>
+      <div class="step-icon">&#9889;</div>
+      <h3>AI finds the moments</h3>
+      <p>Our AI identifies the highest-potential moments with timestamps and viral scores.</p>
+    </div>
+    <div class="step">
+      <div class="step-num">03 &mdash; CLIP</div>
+      <div class="step-icon">&#9986;&#65039;</div>
+      <h3>Open CapCut &amp; go</h3>
+      <p>Use the exact timestamps in CapCut or any editor. Captions already written for you.</p>
+    </div>
+    <div class="step">
+      <div class="step-num">04 &mdash; POST</div>
+      <div class="step-icon">&#128293;</div>
+      <h3>Publish everywhere</h3>
+      <p>Ready-to-post captions and hashtags optimized for TikTok, Shorts, and Reels.</p>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="section-tag">Live demo</div>
+  <h2 class="section-title">What you get</h2>
+  <p class="section-sub">Every clip comes with everything you need — nothing you don't.</p>
+  <div class="demo-section">
+    <div class="demo-card">
+      <div class="demo-bar">
+        <div class="demo-dot r"></div>
+        <div class="demo-dot y"></div>
+        <div class="demo-dot g"></div>
+      </div>
+      <div class="demo-clips">
+        <div class="demo-clip">
+          <div class="demo-clip-top">
+            <span class="demo-clip-num">CLIP 01</span>
+            <span class="ts-pill">2:14 &rarr; 3:02</span>
+            <span class="score-pill">Score 94</span>
+          </div>
+          <div class="demo-clip-body">
+            <div class="demo-hook">"Nobody told me this would happen after 30 days"</div>
+            <div class="demo-caption">This moment hits a classic curiosity loop — viewers will pause to find out the outcome. Perfect for a cold open. &nbsp; #storytime #contentcreator #viral #mindblown #fyp</div>
+          </div>
+        </div>
+        <div class="demo-clip">
+          <div class="demo-clip-top">
+            <span class="demo-clip-num">CLIP 02</span>
+            <span class="ts-pill">11:45 &rarr; 12:30</span>
+            <span class="score-pill">Score 88</span>
+          </div>
+          <div class="demo-clip-body">
+            <div class="demo-hook">"Here's the part they always cut from the tutorial"</div>
+            <div class="demo-caption">High rewatch potential — reveals a hidden insight that feels exclusive. Great for Shorts. &nbsp; #tutorial #protip #learnontiktok #hacks #shorts</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="pricing">
+  <div class="section-tag">Pricing</div>
+  <h2 class="section-title">Simple &amp; free.</h2>
+  <p class="section-sub">No credit card. No signup. Just paste your link and go.</p>
+  <div class="pricing-grid">
+    <div class="pricing-card featured">
+      <div class="pricing-badge">FREE FOREVER</div>
+      <div class="plan-name">Free</div>
+      <div class="plan-price">$0</div>
+      <div class="plan-desc">Everything you need to turn long videos into viral shorts.</div>
+      <ul class="plan-features">
+        <li class="yes">5 clip briefs per day</li>
+        <li class="yes">Timestamps + hook lines</li>
+        <li class="yes">Viral score</li>
+        <li class="yes">Unlimited videos</li>
+        <li class="yes">Ready-to-post captions</li>
+        <li class="yes">Hashtag packs</li>
+      </ul>
+      <a href="app.html" class="btn-plan solid">Try it free &rarr;</a>
+    </div>
+  </div>
+</section>
+
+<section id="faq">
+  <div class="section-tag">FAQ</div>
+  <h2 class="section-title">Questions?</h2>
+  <br />
+  <div class="faq-list">
+    <div class="faq-item">
+      <button class="faq-q">Does it actually watch the video? <span class="faq-arrow">+</span></button>
+      <div class="faq-a">ClipBrief uses AI to analyze the video's topic, context, and common viral patterns for that type of content. It doesn't process video files — which is what keeps it fast, free, and affordable for you.</div>
+    </div>
+    <div class="faq-item">
+      <button class="faq-q">What platforms does it work with? <span class="faq-arrow">+</span></button>
+      <div class="faq-a">Currently YouTube and Twitch VODs. The output is optimized for TikTok, YouTube Shorts, and Instagram Reels.</div>
+    </div>
+    <div class="faq-item">
+      <button class="faq-q">Do I need to install anything? <span class="faq-arrow">+</span></button>
+      <div class="faq-a">No. ClipBrief is 100% browser-based. Paste a link, get results. No accounts required on the free plan.</div>
+    </div>
+    <div class="faq-item">
+      <button class="faq-q">How do I pay if I'm not from the US? <span class="faq-arrow">+</span></button>
+      <div class="faq-a">We use Lemon Squeezy for payments, which supports creators and customers worldwide including most African and Middle Eastern countries. Standard credit/debit cards accepted.</div>
+    </div>
+    <div class="faq-item">
+      <button class="faq-q">Can I cancel anytime? <span class="faq-arrow">+</span></button>
+      <div class="faq-a">Yes. Cancel from your account dashboard at any time. No lock-in, no cancellation fees.</div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="footer-logo"><span>Clip</span>Brief</div>
+  <p>&copy; 2025 ClipBrief. Built for creators.</p>
+</footer>
+
+<script>
+  const cursor = document.getElementById('cursor');
+  document.addEventListener('mousemove', e => {
+    cursor.style.left = e.clientX + 'px';
+    cursor.style.top = e.clientY + 'px';
+  });
+  document.querySelectorAll('a, button').forEach(el => {
+    el.addEventListener('mouseenter', () => cursor.classList.add('big'));
+    el.addEventListener('mouseleave', () => cursor.classList.remove('big'));
+  });
+
+  document.querySelectorAll('.faq-q').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const item = btn.parentElement;
+      item.classList.toggle('open');
+    });
+  });
+</script>
+</body>
+</html>

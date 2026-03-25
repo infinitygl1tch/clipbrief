@@ -1,0 +1,581 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>ClipBrief — App</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --black: #0a0a0a;
+    --white: #f5f2ed;
+    --green: #1D9E75;
+    --yellow: #EF9F27;
+    --gray: #888780;
+    --gray-light: #1a1a18;
+    --border: rgba(245,242,237,0.09);
+    --border-strong: rgba(245,242,237,0.18);
+  }
+
+  body {
+    background: var(--black);
+    color: var(--white);
+    font-family: 'Syne', sans-serif;
+    min-height: 100vh;
+  }
+
+  /* setup warning bar */
+  .setup-warning {
+    background: rgba(239,159,39,0.15);
+    border-bottom: 0.5px solid rgba(239,159,39,0.3);
+    padding: 0.6rem 1.5rem;
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    color: var(--yellow);
+    text-align: center;
+    display: none;
+  }
+  .setup-warning.visible { display: block; }
+
+  nav {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 1.1rem 2rem;
+    border-bottom: 0.5px solid var(--border);
+  }
+  .nav-logo { font-family: 'DM Mono', monospace; font-size: 14px; text-decoration: none; color: var(--white); }
+  .nav-logo span { color: var(--green); }
+  .nav-right { display: flex; align-items: center; gap: 1rem; }
+
+  .pro-badge {
+    display: none;
+    font-family: 'DM Mono', monospace; font-size: 10px; letter-spacing: 0.08em;
+    background: rgba(29,158,117,0.15); color: var(--green);
+    padding: 3px 10px; border-radius: 99px;
+  }
+  .pro-badge.visible { display: inline-flex; }
+
+  .nav-back { font-size: 13px; color: var(--gray); text-decoration: none; }
+  .nav-back:hover { color: var(--white); }
+
+  main { max-width: 780px; margin: 0 auto; padding: 3rem 1.5rem 5rem; }
+
+  .page-title { font-size: 28px; font-weight: 800; letter-spacing: -0.03em; margin-bottom: 0.3rem; }
+  .page-sub { font-size: 14px; color: var(--gray); margin-bottom: 2.5rem; }
+
+  .card {
+    background: var(--gray-light);
+    border: 0.5px solid var(--border);
+    border-radius: 14px;
+    padding: 1.25rem;
+    margin-bottom: 1rem;
+  }
+
+  .label {
+    display: block;
+    font-family: 'DM Mono', monospace;
+    font-size: 10px; letter-spacing: 0.1em;
+    color: var(--gray); text-transform: uppercase;
+    margin-bottom: 0.5rem;
+  }
+
+  input[type="text"], select {
+    width: 100%;
+    background: rgba(245,242,237,0.05);
+    border: 0.5px solid var(--border-strong);
+    border-radius: 8px;
+    color: var(--white);
+    font-family: 'DM Mono', monospace;
+    font-size: 13px;
+    padding: 10px 12px;
+    outline: none;
+    transition: border-color 0.15s;
+  }
+  input[type="text"]:focus, select:focus { border-color: var(--green); }
+  input[type="text"]::placeholder { color: var(--gray); }
+  select option { background: #1a1a18; }
+
+  .options-row { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; margin-bottom: 1rem; }
+
+  #generate-btn {
+    width: 100%;
+    background: var(--green);
+    color: var(--black);
+    font-family: 'Syne', sans-serif;
+    font-size: 15px; font-weight: 800;
+    padding: 14px;
+    border-radius: 99px; border: none; cursor: pointer;
+    transition: opacity 0.15s, transform 0.1s;
+    margin-bottom: 0.75rem;
+    letter-spacing: -0.01em;
+  }
+  #generate-btn:hover { opacity: 0.88; }
+  #generate-btn:active { transform: scale(0.98); }
+  #generate-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+
+  #status {
+    text-align: center;
+    font-family: 'DM Mono', monospace;
+    font-size: 12px; color: var(--gray);
+    min-height: 20px; margin-bottom: 1.5rem;
+  }
+
+  /* usage counter */
+  .usage-counter {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    color: var(--gray);
+    text-align: center;
+    margin-bottom: 1rem;
+    display: none;
+  }
+  .usage-counter.visible { display: block; }
+  .usage-counter span { color: var(--green); }
+
+  /* license key activation */
+  .license-section {
+    background: var(--gray-light);
+    border: 0.5px solid var(--border);
+    border-radius: 14px;
+    padding: 1.25rem;
+    margin-bottom: 1.5rem;
+  }
+  .license-title {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px; letter-spacing: 0.1em;
+    color: var(--gray); text-transform: uppercase;
+    margin-bottom: 0.75rem;
+  }
+  .license-row { display: flex; gap: 0.5rem; }
+  .license-row input { flex: 1; }
+  .license-btn {
+    background: var(--green);
+    color: var(--black);
+    font-family: 'Syne', sans-serif;
+    font-size: 13px; font-weight: 700;
+    padding: 10px 16px;
+    border-radius: 8px; border: none; cursor: pointer;
+    white-space: nowrap;
+  }
+  .license-btn:hover { opacity: 0.85; }
+  .license-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+  .license-msg {
+    font-size: 12px;
+    margin-top: 0.5rem;
+    display: none;
+  }
+  .license-msg.success { color: var(--green); display: block; }
+  .license-msg.error { color: #f09595; display: block; }
+
+  /* clip cards */
+  .results { display: none; }
+  .results.visible { display: block; }
+  .results-label {
+    font-family: 'DM Mono', monospace; font-size: 10px;
+    letter-spacing: 0.1em; color: var(--gray); text-transform: uppercase;
+    margin-bottom: 0.75rem;
+  }
+
+  .clip-card {
+    border: 0.5px solid var(--border);
+    border-radius: 12px; overflow: hidden;
+    margin-bottom: 0.75rem;
+    background: var(--gray-light);
+    position: relative;
+  }
+
+  .clip-top {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0.65rem 1rem;
+    border-bottom: 0.5px solid var(--border);
+    background: rgba(245,242,237,0.03);
+    flex-wrap: wrap; gap: 6px;
+  }
+  .clip-num { font-family: 'DM Mono', monospace; font-size: 10px; color: var(--gray); }
+  .ts { font-family: 'DM Mono', monospace; font-size: 11px; background: rgba(29,158,117,0.15); color: var(--green); padding: 2px 9px; border-radius: 99px; }
+  .vs { font-family: 'DM Mono', monospace; font-size: 11px; background: rgba(239,159,39,0.15); color: var(--yellow); padding: 2px 9px; border-radius: 99px; }
+
+  .clip-body { padding: 0.9rem 1rem; }
+  .hook { font-size: 15px; font-weight: 700; margin-bottom: 0.4rem; line-height: 1.35; }
+  .why { font-size: 12px; color: var(--gray); line-height: 1.55; margin-bottom: 0.65rem; }
+  .tags { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 0.65rem; }
+  .tag { font-family: 'DM Mono', monospace; font-size: 10px; border: 0.5px solid var(--border-strong); color: var(--gray); padding: 2px 8px; border-radius: 99px; }
+  .cap-label { font-family: 'DM Mono', monospace; font-size: 9px; letter-spacing: 0.1em; color: var(--gray); text-transform: uppercase; margin-bottom: 4px; }
+  .caption { font-size: 12px; line-height: 1.55; background: rgba(245,242,237,0.04); border-left: 2px solid rgba(29,158,117,0.5); border-radius: 0 6px 6px 0; padding: 0.6rem 0.75rem; }
+
+  /* paywall overlay */
+  .paywall-overlay {
+    display: none;
+    position: absolute; inset: 0;
+    backdrop-filter: blur(6px);
+    background: rgba(10,10,10,0.82);
+    border-radius: 12px;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 1.5rem;
+    gap: 0.75rem;
+  }
+  .paywall-overlay.visible { display: flex; }
+  .lock-icon { font-size: 24px; }
+  .paywall-title { font-size: 15px; font-weight: 700; }
+  .paywall-sub { font-size: 12px; color: var(--gray); }
+  .paywall-btn {
+    background: var(--green); color: var(--black);
+    font-family: 'Syne', sans-serif; font-size: 13px; font-weight: 700;
+    padding: 10px 22px; border-radius: 99px; border: none; cursor: pointer;
+    text-decoration: none; display: inline-block;
+    transition: opacity 0.15s;
+  }
+  .paywall-btn:hover { opacity: 0.85; }
+
+  /* upgrade banner */
+  .upgrade-banner {
+    display: none;
+    background: rgba(29,158,117,0.08);
+    border: 0.5px solid rgba(29,158,117,0.25);
+    border-radius: 12px;
+    padding: 1.25rem;
+    text-align: center;
+    margin-top: 1rem;
+  }
+  .upgrade-banner.visible { display: block; }
+  .upgrade-banner p { font-size: 14px; margin-bottom: 0.75rem; }
+  .upgrade-banner strong { color: var(--green); }
+
+  .error {
+    background: rgba(226,75,74,0.1); color: #f09595;
+    border-radius: 8px; padding: 0.75rem 1rem;
+    font-size: 13px; display: none; margin-bottom: 1rem;
+  }
+
+  @media (max-width: 520px) {
+    .options-row { grid-template-columns: 1fr; }
+    main { padding: 2rem 1rem 4rem; }
+    .license-row { flex-direction: column; }
+  }
+</style>
+</head>
+<body>
+
+<!-- Setup warning bar -->
+<div class="setup-warning" id="setup-warning">
+  ⚠ Setup required: Add your Lemon Squeezy checkout URL in the code.
+</div>
+
+<nav>
+  <a class="nav-logo" href="index.html"><span>Clip</span>Brief</a>
+  <div class="nav-right">
+    <a class="nav-back" href="index.html">&larr; Home</a>
+  </div>
+</nav>
+
+<main>
+  <h1 class="page-title">Clip Brief Generator</h1>
+  <p class="page-sub">AI-powered clip recommendations for your videos</p>
+
+  <!-- Usage Counter -->
+  <div class="usage-counter" id="usage-counter">You have used <span id="usage-count">0</span>/5 generations today</div>
+
+  <div class="card">
+    <label class="label" for="url-input">Video URL</label>
+    <input id="url-input" type="text" placeholder="https://youtube.com/watch?v=... or twitch.tv/videos/..." />
+  </div>
+
+  <div class="options-row">
+    <div class="card">
+      <label class="label">Platform</label>
+      <select id="platform-select">
+        <option value="TikTok">TikTok</option>
+        <option value="YouTube Shorts">YouTube Shorts</option>
+        <option value="Instagram Reels">Instagram Reels</option>
+        <option value="TikTok, YouTube Shorts, and Instagram Reels">All Platforms</option>
+      </select>
+    </div>
+    <div class="card">
+      <label class="label">Clips to Generate</label>
+      <select id="clips-select">
+        <option value="3">3 clips</option>
+        <option value="5" selected>5 clips</option>
+        <option value="7">7 clips (Pro)</option>
+        <option value="10">10 clips (Pro)</option>
+      </select>
+    </div>
+  </div>
+
+  <div id="error-box" class="error"></div>
+  <div class="usage-counter" id="usage-counter">You have used <span id="usage-count">0</span>/5 free generations today</div>
+  <button id="generate-btn">Generate Clip Briefs &rarr;</button>
+  <div id="status"></div>
+
+  <div id="results" class="results">
+    <div class="results-label" id="results-label">Recommended clips</div>
+    <div id="clips-container"></div>
+  </div>
+</main>
+
+<script>
+  // ─── CONFIG ───────────────────────────────────────────────────────────────
+  // Cloudflare Worker URL (optional):
+  // 1. Deploy worker.js to Cloudflare Workers
+  // 2. Add GOOGLE_AI_API_KEY in Cloudflare variables
+  // 3. Paste your worker URL below
+  const WORKER_URL = 'https://clipbrief-api.h4busines.workers.dev'; // e.g., 'https://clipbrief-api.yourname.workers.dev'
+  const FREE_DAILY_LIMIT = 5;
+  // ─────────────────────────────────────────────────────────────────────────
+
+  // Show warning if Worker URL not set (optional setup)
+  if (!WORKER_URL) {
+    document.getElementById('setup-warning').textContent = '⚠ Want better results? Add a free Cloudflare Worker with Google AI (see README for steps).';
+    document.getElementById('setup-warning').classList.add('visible');
+  }
+
+  // ─── USAGE COUNTER ─────────────────────────────────────────────────────
+  function getTodayKey() {
+    const today = new Date().toISOString().split('T')[0];
+    return `clipbrief_usage_${today}`;
+  }
+
+  function getUsageCount() {
+    const key = getTodayKey();
+    const stored = localStorage.getItem(key);
+    return stored ? parseInt(stored, 10) : 0;
+  }
+
+  function incrementUsage() {
+    const key = getTodayKey();
+    const current = getUsageCount();
+    localStorage.setItem(key, (current + 1).toString());
+  }
+
+  function updateUsageDisplay() {
+    const count = getUsageCount();
+    const counter = document.getElementById('usage-counter');
+    const countSpan = document.getElementById('usage-count');
+    const btn = document.getElementById('generate-btn');
+    
+    counter.classList.add('visible');
+    countSpan.textContent = count;
+    
+    if (count >= FREE_DAILY_LIMIT) {
+      btn.disabled = true;
+      showError('Daily limit reached. Come back tomorrow!');
+    } else {
+      btn.disabled = false;
+    }
+  }
+
+  // ─── CLIP GENERATION ──────────────────────────────────────────────────
+  const btn = document.getElementById('generate-btn');
+  const urlInput = document.getElementById('url-input');
+  const statusEl = document.getElementById('status');
+  const resultsEl = document.getElementById('results');
+  const clipsContainer = document.getElementById('clips-container');
+  const errorBox = document.getElementById('error-box');
+
+  btn.addEventListener('click', async () => {
+    // Check usage limit
+    const usage = getUsageCount();
+    if (usage >= FREE_DAILY_LIMIT) {
+      showError('Daily limit reached. Come back tomorrow!');
+      return;
+    }
+
+    const url = urlInput.value.trim();
+    const platform = document.getElementById('platform-select').value;
+    const numClips = parseInt(document.getElementById('clips-select').value);
+
+    if (!url) { showError('Please paste a YouTube or Twitch URL.'); return; }
+
+    btn.disabled = true;
+    errorBox.style.display = 'none';
+    resultsEl.classList.remove('visible');
+    clipsContainer.innerHTML = '';
+    statusEl.textContent = 'Generating clip briefs...';
+
+    const prompt = `You are an expert viral content strategist for short-form video. A creator has a long-form video at: "${url}"
+
+Target platform: ${platform}
+
+Generate exactly ${numClips} clip briefs. Since you cannot watch the video, generate realistic and highly actionable clip recommendations based on viral patterns for this type of content. Make them feel real and specific.
+
+Respond ONLY with a valid JSON array. No markdown, no backticks, no explanation. Each object:
+- "timestamp_start": string like "3:22"
+- "timestamp_end": string like "4:10"
+- "hook": punchy scroll-stopping hook line (max 12 words)
+- "why": 1-2 sentences explaining viral potential
+- "viral_score": integer 70-98
+- "caption": ready-to-post caption with 4-5 hashtags
+- "tags": array of 3 short content tags`;
+
+    try {
+      let clips;
+
+      // Check if Worker is configured - if not, use built-in generator
+      if (!WORKER_URL) {
+        // Use built-in free generator (no API needed)
+        clips = generateClipsLocal(platform, numClips);
+      } else {
+        // Call Cloudflare Worker with Google AI
+        const response = await fetch(WORKER_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ prompt: prompt })
+        });
+
+        const data = await response.json();
+        
+        if (data.error) {
+          throw new Error(data.error);
+        }
+
+        // Google AI response format
+        const text = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+        const clean = text.replace(/```json|```/g, '').trim();
+        clips = JSON.parse(clean);
+      }
+
+      // Increment usage
+      incrementUsage();
+      updateUsageDisplay();
+
+      statusEl.textContent = '';
+      renderClips(clips);
+    } catch (err) {
+      // Fallback to local generator on error
+      clips = generateClipsLocal(platform, numClips);
+      incrementUsage();
+      updateUsageDisplay();
+      statusEl.textContent = '';
+      renderClips(clips);
+    } finally {
+      btn.disabled = false;
+    }
+  });
+
+  function renderClips(clips) {
+    clipsContainer.innerHTML = '';
+    clips.forEach((clip, i) => {
+      const tags = (clip.tags || []).map(t => `<span class="tag">${t}</span>`).join('');
+
+      const card = document.createElement('div');
+      card.className = 'clip-card';
+      card.innerHTML = `
+        <div class="clip-top">
+          <span class="clip-num">CLIP ${String(i + 1).padStart(2, '0')}</span>
+          <span class="ts">${clip.timestamp_start} &rarr; ${clip.timestamp_end}</span>
+          <span class="vs">Score ${clip.viral_score}</span>
+        </div>
+        <div class="clip-body">
+          <div class="hook">"${clip.hook}"</div>
+          <div class="why">${clip.why}</div>
+          <div class="tags">${tags}</div>
+          <div class="cap-label">Ready-to-post caption</div>
+          <div class="caption">${clip.caption}</div>
+        </div>
+      `;
+      clipsContainer.appendChild(card);
+    });
+
+    resultsEl.classList.add('visible');
+  }
+
+  function showError(msg) {
+    errorBox.textContent = msg;
+    errorBox.style.display = 'block';
+  }
+
+  // Built-in local clip generator (free, no API needed)
+  function generateClipsLocal(platform, numClips) {
+    const hooks = [
+      "Nobody told me this would happen after 30 days",
+      "Here's the part they always cut from the tutorial",
+      "This one mistake cost me $10,000",
+      "I finally found the secret after 5 years",
+      "Stop doing this if you want to grow",
+      "The truth about what really works",
+      "3 things I wish I knew sooner",
+      "This changed everything for me",
+      "The real reason you're stuck",
+      "Here's what's actually happening"
+    ];
+    
+    const whyOptions = [
+      "Triggers curiosity loop — viewers need to know the outcome.",
+      "High rewatch value — reveals hidden insight viewers missed.",
+      "Emotional hook that stops the scroll immediately.",
+      "Controversial take that sparks debate and engagement.",
+      "Relatable struggle every creator faces daily.",
+      "Actionable tip viewers can implement immediately.",
+      "Story format drives completion rate significantly."
+    ];
+    
+    const tagsOptions = [
+      ["storytime", "creator", "viral"],
+      ["tutorial", "protip", "learn"],
+      ["tips", "growth", "strategy"],
+      ["behindthe scenes", "creator", "fyp"],
+      ["motivation", "mindset", "success"],
+      ["shorts", "content", "viral"],
+      ["howto", "guide", "hacks"],
+      ["vlog", "life", "journey"],
+      ["business", "money", "startup"],
+      ["fitness", "health", "transformation"]
+    ];
+    
+    const captions = [
+      "This moment hits a classic curiosity loop — viewers will pause to find out the outcome. Perfect for a cold open. #storytime #contentcreator #viral #mindblown #fyp",
+      "High rewatch potential — reveals a hidden insight that feels exclusive. Great for Shorts. #tutorial #protip #learnontiktok #hacks #shorts",
+      "The scroll stopper everyone needs. Save this for later! #tips #growth #strategy #content #creator #viral",
+      "Drop a '🔥' if this resonates! #motivation #mindset #success #growth #creator #fyp",
+      "This is your sign to start today. Don't wait. #howto #guide #hacks #tips #creator #shorts"
+    ];
+    
+    const clips = [];
+    const usedHooks = new Set();
+    
+    for (let i = 0; i < numClips; i++) {
+      // Pick random unused hook
+      let hook;
+      do {
+        hook = hooks[Math.floor(Math.random() * hooks.length)];
+      } while (usedHooks.has(hook) && usedHooks.size < hooks.length);
+      usedHooks.add(hook);
+      
+      // Generate timestamps (random within 0-30 min video)
+      const startMin = Math.floor(Math.random() * 25);
+      const startSec = Math.floor(Math.random() * 60);
+      const endMin = startMin + Math.floor(Math.random() * 3) + 1;
+      const endSec = Math.floor(Math.random() * 60);
+      
+      const timestamp_start = `${startMin}:${String(startSec).padStart(2, '0')}`;
+      const timestamp_end = `${endMin}:${String(endSec).padStart(2, '0')}`;
+      
+      const viral_score = Math.floor(Math.random() * 28) + 70; // 70-98
+      
+      const why = whyOptions[Math.floor(Math.random() * whyOptions.length)];
+      const tags = tagsOptions[Math.floor(Math.random() * tagsOptions.length)];
+      const caption = captions[Math.floor(Math.random() * captions.length)];
+      
+      clips.push({
+        timestamp_start,
+        timestamp_end,
+        hook,
+        why,
+        viral_score,
+        caption,
+        tags
+      });
+    }
+    
+    return clips;
+  }
+
+  // Initialize usage display
+  updateUsageDisplay();
+</script>
+</body>
+</html>
